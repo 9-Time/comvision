@@ -5,8 +5,8 @@ from torch.autograd import Variable
 import numpy as np
 from util import * 
 
-CFG_FILE = 'cfg/yolov3.cfg'
-WEIGHTS_FILE = 'weights/yolov3.weights'
+CFG_FILE = 'cfg/yolov3-tiny.cfg'
+WEIGHTS_FILE = 'weights/yolov3-tiny.weights'
 
 def parse_cfg(cfgfile):
     """
