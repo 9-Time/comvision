@@ -6,7 +6,8 @@ import pickle as pkl
 from preprocess import letterbox_image
 import random
 
-CUDA = torch.cuda.is_available()
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
 num_classes = 80
 confidence = 0.5
 
@@ -46,23 +47,20 @@ model = Darknet()
 model.load_weights()
 model.net_info["height"] = 416
 inp_dim = int(model.net_info["height"])
-if CUDA:
-    model.cuda()
-model.eval()
+model.to(device)
 
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)
-
-    if CUDA:
-        im_dim.cuda()
-        img.cuda()
+    im_dim.to(device)
+    img.to(device)
+    
     with torch.no_grad():
-        pred = model(Variable(img), CUDA)
+        pred = model(Variable(img), device)
     prediction = write_results(pred, confidence, num_classes, nms = True, nms_conf = 0.5)
-    output = prediction
+    output = prediction.to(device)
     im_dim = im_dim.repeat(output.size(0), 1)
     scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
     
