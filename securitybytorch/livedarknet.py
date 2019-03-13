@@ -56,12 +56,14 @@ while True:
     im_dim = torch.FloatTensor(dim).repeat(1,2)
     im_dim.to(device)
     img.to(device)
+    model_input = Variable(img).to(device)
     
     with torch.no_grad():
-        pred = model(Variable(img), device)
+        pred = model(model_input, device)
     prediction = write_results(pred, confidence, num_classes, nms = True, nms_conf = 0.5)
     output = prediction.to(device)
     im_dim = im_dim.repeat(output.size(0), 1)
+    im_dim = im_dim.to(device)
     scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
     
     output[:,[1,3]] -= (inp_dim - scaling_factor*im_dim[:,0].view(-1,1))/2
