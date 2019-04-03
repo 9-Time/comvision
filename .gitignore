@@ -1,1 +1,21 @@
+# YOLO weights
 *.weights
+
+# Pytorch Models
+*.pth
+*.pt
+
+# images
+*.jpg
+*.png
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# pyenv
+.python-version
