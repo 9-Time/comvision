@@ -17,9 +17,7 @@ from vision.nn.multibox_loss import MultiboxLoss
 from vision.ssd.config import vgg_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
 
-dataset_type = 'open_images'
-datatset_directory = 'dataset'
-validation_dataset = '' # Val Data directory
+dataset_directory = 'data/open_images'
 pretrained_model = '' # model directory
 checkpoint_folder = 'checkpoint' # Directory for saving checkpoint models
 resume = None
@@ -44,7 +42,7 @@ debug_steps = 100
 
 use_cuda = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if use_cuda else "cpu")
-datatset_directory = os.listdir(datatset_directory)
+dataset_directory = os.listdir(dataset_directory)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -54,7 +52,7 @@ if use_cuda:
 
 
 def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
-    net.train(True)
+    net.train()
     running_loss = 0.0
     running_regression_loss = 0.0
     running_classification_loss = 0.0
@@ -131,41 +129,26 @@ if __name__ == '__main__':
 
     logging.info("Prepare training datasets.")
     datasets = []
-    for dataset_path in datatset_directory:
-        print(dataset_path)
-        if dataset_type == 'voc':
-            dataset = VOCDataset(dataset_path, transform=train_transform,
-                                 target_transform=target_transform)
-            label_file = os.path.join(checkpoint_folder, "voc-model-labels.txt")
-            store_labels(label_file, dataset.class_names)
-            num_classes = len(dataset.class_names)
-        elif dataset_type == 'open_images':
-            dataset = OpenImagesDataset('dataset/' + dataset_path,
-                 transform=train_transform, target_transform=target_transform,
-                 dataset_type="train", balance_data=balance_data)
-            label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
-            store_labels(label_file, dataset.class_names)
-            logging.info(dataset)
-            num_classes = len(dataset.class_names)
-
-        else:
-            raise ValueError(f"Dataset tpye {dataset_type} is not supported.")
+    for dataset_path in dataset_directory:
+        dataset = OpenImagesDataset('dataset/' + dataset_path,
+                transform=train_transform, target_transform=target_transform,
+                dataset_type="train", balance_data=balance_data)
+        label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
+        store_labels(label_file, dataset.class_names)
+        logging.info(dataset)
+        num_classes = len(dataset.class_names)
         datasets.append(dataset)
-    # logging.info(f"Stored labels into file {label_file}.")
+    logging.info(f"Stored labels into file {label_file}.")
     train_dataset = ConcatDataset(datasets)
     logging.info("Train dataset size: {}".format(len(train_dataset)))
     train_loader = DataLoader(train_dataset, batch_size,
                               num_workers=num_workers,
                               shuffle=True)
     logging.info("Prepare Validation datasets.")
-    if dataset_type == "voc":
-        val_dataset = VOCDataset(validation_dataset, transform=test_transform,
-                                 target_transform=target_transform, is_test=True)
-    elif dataset_type == 'open_images':
-        val_dataset = OpenImagesDataset('dataset/'+ dataset_path,
-                                        transform=test_transform, target_transform=target_transform,
-                                        dataset_type="validation")
-        logging.info(val_dataset)
+    val_dataset = OpenImagesDataset('dataset/'+ dataset_path,
+                                    transform=test_transform, target_transform=target_transform,
+                                    dataset_type="validation")
+    logging.info(val_dataset)
     logging.info("validation dataset size: {}".format(len(val_dataset)))
 
     val_loader = DataLoader(val_dataset, batch_size,
