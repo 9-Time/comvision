@@ -12,6 +12,7 @@ class TrainAugmentation:
         self.size = size
         self.augment = Compose([
             ConvertFromInts(),
+            NpToPIL(),
             ColorJitterLightNoise(2,2,2,0.5),
             Expand(self.mean),
             RandomSampleCrop(),
@@ -37,6 +38,7 @@ class TrainAugmentation:
 class TestTransform:
     def __init__(self, size, mean=0.0, std=1.0):
         self.transform = Compose([
+
             ToPercentCoords(),
             Resize(size),
             SubtractMeans(mean),

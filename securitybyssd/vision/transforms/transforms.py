@@ -413,5 +413,14 @@ class ColorJitterLightNoise:
 
     def __call__(self, image, boxes, labels):
         im = image.copy()
-        im = self.jc(im)
-        return rand_light_noise(im, boxes, labels)
+        im = self.cj(im)
+        return self.rand_light_noise(im, boxes, labels)
+
+class NpToPIL:
+    def __init__(self):
+        self.topil = transforms.ToPILImage()
+
+    def __call__(self, image, boxes, labels):
+        im = image.copy()
+        im = self.topil(im)
+        return im, boxes, labels

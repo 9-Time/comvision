@@ -41,7 +41,6 @@ debug_steps = 100
 
 use_cuda = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if use_cuda else "cpu")
-dataset_directory = os.listdir(dataset_directory)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -128,15 +127,14 @@ if __name__ == '__main__':
 
     logging.info("Prepare training datasets.")
     datasets = []
-    for dataset_path in dataset_directory:
-        dataset = OpenImagesDataset(dataset_path,
-                transform=train_transform, target_transform=target_transform,
-                dataset_type="train", balance_data=balance_data)
-        label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
-        store_labels(label_file, dataset.class_names)
-        logging.info(dataset)
-        num_classes = len(dataset.class_names)
-        datasets.append(dataset)
+    dataset = OpenImagesDataset(dataset_directory,
+            transform=train_transform, target_transform=target_transform,
+            dataset_type="train", balance_data=balance_data)
+    label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
+    store_labels(label_file, dataset.class_names)
+    logging.info(dataset)
+    num_classes = len(dataset.class_names)
+    datasets.append(dataset)
     logging.info(f"Stored labels into file {label_file}.")
     train_dataset = ConcatDataset(datasets)
     logging.info("Train dataset size: {}".format(len(train_dataset)))
@@ -144,7 +142,7 @@ if __name__ == '__main__':
                               num_workers=num_workers,
                               shuffle=True)
     logging.info("Prepare Validation datasets.")
-    val_dataset = OpenImagesDataset(dataset_path,
+    val_dataset = OpenImagesDataset(dataset_directory,
                                     transform=test_transform, target_transform=target_transform,
                                     dataset_type="validation")
     logging.info(val_dataset)

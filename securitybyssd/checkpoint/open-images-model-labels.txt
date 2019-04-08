@@ -1,2 +1,6 @@
 BACKGROUND
+Baseball bat
+Beer
+Handgun
+Knife
 Skateboard
