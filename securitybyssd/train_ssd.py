@@ -17,11 +17,11 @@ from vision.nn.multibox_loss import MultiboxLoss
 from vision.ssd.config import vgg_ssd_config
 from vision.ssd.data_preprocessing import TrainAugmentation, TestTransform
 
-dataset_type = 'voc'
-datatset_directory = ''
+dataset_type = 'open_images'
+datatset_directory = 'dataset'
 validation_dataset = '' # Val Data directory
 pretrained_model = '' # model directory
-checkpoint_folder = '' # Directory for saving checkpoint models
+checkpoint_folder = 'checkpoint' # Directory for saving checkpoint models
 resume = None
 balance_data = True
 freeze_base_net = True
@@ -44,7 +44,7 @@ debug_steps = 100
 
 use_cuda = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if use_cuda else "cpu")
-
+datatset_directory = os.listdir(datatset_directory)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -62,7 +62,9 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         images, boxes, labels = data
         images = images.to(device)
         boxes = boxes.to(device)
+        labels = labels.long()
         labels = labels.to(device)
+        
 
         optimizer.zero_grad()
         confidence, locations = net(images)
@@ -99,6 +101,7 @@ def test(loader, net, criterion, device):
         images, boxes, labels = data
         images = images.to(device)
         boxes = boxes.to(device)
+        labels = labels.long()
         labels = labels.to(device)
         num += 1
 
@@ -128,7 +131,8 @@ if __name__ == '__main__':
 
     logging.info("Prepare training datasets.")
     datasets = []
-    for dataset_path in datasets:
+    for dataset_path in datatset_directory:
+        print(dataset_path)
         if dataset_type == 'voc':
             dataset = VOCDataset(dataset_path, transform=train_transform,
                                  target_transform=target_transform)
@@ -136,7 +140,7 @@ if __name__ == '__main__':
             store_labels(label_file, dataset.class_names)
             num_classes = len(dataset.class_names)
         elif dataset_type == 'open_images':
-            dataset = OpenImagesDataset(dataset_path,
+            dataset = OpenImagesDataset('dataset/' + dataset_path,
                  transform=train_transform, target_transform=target_transform,
                  dataset_type="train", balance_data=balance_data)
             label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
@@ -147,7 +151,7 @@ if __name__ == '__main__':
         else:
             raise ValueError(f"Dataset tpye {dataset_type} is not supported.")
         datasets.append(dataset)
-    logging.info(f"Stored labels into file {label_file}.")
+    # logging.info(f"Stored labels into file {label_file}.")
     train_dataset = ConcatDataset(datasets)
     logging.info("Train dataset size: {}".format(len(train_dataset)))
     train_loader = DataLoader(train_dataset, batch_size,
@@ -158,7 +162,7 @@ if __name__ == '__main__':
         val_dataset = VOCDataset(validation_dataset, transform=test_transform,
                                  target_transform=target_transform, is_test=True)
     elif dataset_type == 'open_images':
-        val_dataset = OpenImagesDataset(dataset_path,
+        val_dataset = OpenImagesDataset('dataset/'+ dataset_path,
                                         transform=test_transform, target_transform=target_transform,
                                         dataset_type="test")
         logging.info(val_dataset)
