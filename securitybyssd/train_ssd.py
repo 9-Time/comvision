@@ -164,7 +164,7 @@ if __name__ == '__main__':
     elif dataset_type == 'open_images':
         val_dataset = OpenImagesDataset('dataset/'+ dataset_path,
                                         transform=test_transform, target_transform=target_transform,
-                                        dataset_type="test")
+                                        dataset_type="validation")
         logging.info(val_dataset)
     logging.info("validation dataset size: {}".format(len(val_dataset)))
 
