@@ -405,3 +405,13 @@ class PhotometricDistort(object):
         im, boxes, labels = distort(im, boxes, labels)
         return self.rand_light_noise(im, boxes, labels)
 
+
+class ColorJitterLightNoise:
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        self.cj = transforms.ColorJitter(brightness, contrast, saturation, hue)
+        self.rand_light_noise = RandomLightingNoise()
+
+    def __call__(self, image, boxes, labels):
+        im = image.copy()
+        im = self.jc(im)
+        return rand_light_noise(im, boxes, labels)

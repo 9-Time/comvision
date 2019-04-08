@@ -11,7 +11,6 @@ from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from vision.utils.misc import str2bool, Timer, freeze_net_layers, store_labels
 from vision.ssd.ssd import MatchPrior
 from vision.ssd.vgg_ssd import create_vgg_ssd
-from vision.datasets.voc_dataset import VOCDataset
 from vision.datasets.open_images import OpenImagesDataset
 from vision.nn.multibox_loss import MultiboxLoss
 from vision.ssd.config import vgg_ssd_config
@@ -22,8 +21,8 @@ pretrained_model = '' # model directory
 checkpoint_folder = 'checkpoint' # Directory for saving checkpoint models
 resume = None
 balance_data = True
-freeze_base_net = True
-freeze_net = True
+freeze_base_net = False
+freeze_net = False
 mb2_width_mult = 1.0
 lr = 0.001
 momentum = 0.9
@@ -130,7 +129,7 @@ if __name__ == '__main__':
     logging.info("Prepare training datasets.")
     datasets = []
     for dataset_path in dataset_directory:
-        dataset = OpenImagesDataset('dataset/' + dataset_path,
+        dataset = OpenImagesDataset(dataset_path,
                 transform=train_transform, target_transform=target_transform,
                 dataset_type="train", balance_data=balance_data)
         label_file = os.path.join(checkpoint_folder, "open-images-model-labels.txt")
@@ -145,7 +144,7 @@ if __name__ == '__main__':
                               num_workers=num_workers,
                               shuffle=True)
     logging.info("Prepare Validation datasets.")
-    val_dataset = OpenImagesDataset('dataset/'+ dataset_path,
+    val_dataset = OpenImagesDataset(dataset_path,
                                     transform=test_transform, target_transform=target_transform,
                                     dataset_type="validation")
     logging.info(val_dataset)
