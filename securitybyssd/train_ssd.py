@@ -52,7 +52,6 @@ if use_cuda:
     torch.backends.cudnn.benchmark = True
     logging.info("Use Cuda.")
 
-# TODO VERIFY code below here to not use args
 
 def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     net.train(True)
@@ -117,26 +116,10 @@ def test(loader, net, criterion, device):
 if __name__ == '__main__':
     timer = Timer()
 
-    logging.info(args)
-    if net == 'vgg16-ssd':
-        create_net = create_vgg_ssd
-        config = vgg_ssd_config
-    elif net == 'mb1-ssd':
-        create_net = create_mobilenetv1_ssd
-        config = mobilenetv1_ssd_config
-    elif net == 'mb1-ssd-lite':
-        create_net = create_mobilenetv1_ssd_lite
-        config = mobilenetv1_ssd_config
-    elif net == 'sq-ssd-lite':
-        create_net = create_squeezenet_ssd_lite
-        config = squeezenet_ssd_config
-    elif net == 'mb2-ssd-lite':
-        create_net = lambda num: create_mobilenetv2_ssd_lite(num, width_mult=mb2_width_mult)
-        config = mobilenetv1_ssd_config
-    else:
-        logging.fatal("The net type is wrong.")
-        parser.print_help(sys.stderr)
-        sys.exit(1)
+
+    create_net = create_vgg_ssd
+    config = vgg_ssd_config
+    
     train_transform = TrainAugmentation(config.image_size, config.image_mean, config.image_std)
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
@@ -226,15 +209,15 @@ if __name__ == '__main__':
         ]
 
     timer.start("Load Model")
-    if resume:
-        logging.info(f"Resume from the model {resume}")
-        net.load(resume)
-    elif base_net:
-        logging.info(f"Init from base net {base_net}")
-        net.init_from_base_net(base_net)
-    elif pretrained_ssd:
-        logging.info(f"Init from pretrained ssd {pretrained_ssd}")
-        net.init_from_pretrained_ssd(pretrained_ssd)
+    # if resume:
+    #     logging.info(f"Resume from the model {resume}")
+    #     net.load(resume)
+    # elif base_net:
+    #     logging.info(f"Init from base net {base_net}")
+    #     net.init_from_base_net(base_net)
+    # elif pretrained_ssd:
+    #     logging.info(f"Init from pretrained ssd {pretrained_ssd}")
+    #     net.init_from_pretrained_ssd(pretrained_ssd)
     logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     net.to(DEVICE)
@@ -254,10 +237,6 @@ if __name__ == '__main__':
     elif scheduler == 'cosine':
         logging.info("Uses CosineAnnealingLR scheduler.")
         scheduler = CosineAnnealingLR(optimizer, t_max, last_epoch=last_epoch)
-    else:
-        logging.fatal(f"Unsupported Scheduler: {scheduler}.")
-        parser.print_help(sys.stderr)
-        sys.exit(1)
 
     logging.info(f"Start training from epoch {last_epoch + 1}.")
     for epoch in range(last_epoch + 1, num_epochs):
