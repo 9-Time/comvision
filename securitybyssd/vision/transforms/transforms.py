@@ -52,6 +52,7 @@ class Compose(object):
 
     def __call__(self, img, boxes=None, labels=None):
         for t in self.transforms:
+            print(type(t))
             img, boxes, labels = t(img, boxes, labels)
         return img, boxes, labels
 
@@ -210,8 +211,11 @@ class ToCV2Image(object):
 
 
 class ToTensor(object):
+    def __init__(self):
+        self.tt = transforms.ToTensor()
+    
     def __call__(self, cvimage, boxes=None, labels=None):
-        return torch.from_numpy(cvimage.astype(np.float32)).permute(2, 0, 1), boxes, labels
+        return self.tt(cvimage), boxes, labels
 
 
 class RandomSampleCrop(object):
@@ -414,7 +418,7 @@ class ColorJitterLightNoise:
     def __call__(self, image, boxes, labels):
         im = image.copy()
         im = self.cj(im)
-        return self.rand_light_noise(im, boxes, labels)
+        return im, boxes, labels
 
 class NpToPIL:
     def __init__(self):
@@ -424,3 +428,11 @@ class NpToPIL:
         im = image.copy()
         im = self.topil(im)
         return im, boxes, labels
+
+class Normalise:
+    def __init__(self):
+        self.norm = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+
+    def __call__(self, image, boxes, labels):
+        return self.norm(image), boxes, labels

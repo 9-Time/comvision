@@ -11,17 +11,15 @@ class TrainAugmentation:
         self.mean = mean
         self.size = size
         self.augment = Compose([
-            ConvertFromInts(),
-            NpToPIL(),
-            ColorJitterLightNoise(2,2,2,0.5),
-            Expand(self.mean),
+            
             RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
-            SubtractMeans(self.mean),
-            lambda img, boxes=None, labels=None: (img / std, boxes, labels),
+            NpToPIL(),
+            ColorJitterLightNoise(2,2,2,0.5),
             ToTensor(),
+            Normalise()
         ])
 
     def __call__(self, img, boxes, labels):
