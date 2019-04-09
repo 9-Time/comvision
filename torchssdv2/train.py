@@ -1,5 +1,5 @@
-from dataloader.openimagesloader import *
-from dataloader.transformations import *
+from pkg.dataloader.openimagesloader import *
+from pkg.dataloader.transformations import *
 
 import torch
 import os
@@ -7,10 +7,10 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 import time
 
-from vision.ssd.vgg_ssd import create_vgg_ssd
-from vision.ssd.config import vgg_ssd_config
-from vision.ssd.ssd import MatchPrior
-from vision.nn.multibox_loss import MultiboxLoss
+from pkg.vgg_ssd import create_vgg_ssd
+from pkg.config import vgg_ssd_config
+from pkg.ssd import MatchPrior
+from pkg.multibox_loss import MultiboxLoss
 
 DATASET_DIRECTORY = 'data/open_images'
 CHECKPOINT_DIRECTORY = 'checkpoint'
@@ -102,10 +102,10 @@ if __name__ == '__main__':
     config = vgg_ssd_config
     #########################################
 
-    train_transform = TrainAugmentation(300)
+    train_transform = TrainAugmentation(config.image_size)
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
-    test_transform = TestTransform(300)
+    test_transform = TestTransform(config.image_size)
     print('Preparing Training Dataset')
     train_dataset = OpenImageData(DATASET_DIRECTORY, train_val_test ='train',
             transform=train_transform, target_transform=target_transform)
