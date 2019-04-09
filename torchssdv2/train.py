@@ -16,12 +16,13 @@ DATASET_DIRECTORY = 'data/open_images'
 CHECKPOINT_DIRECTORY = 'checkpoint'
 if not os.path.exists(CHECKPOINT_DIRECTORY):
     os.makedirs(CHECKPOINT_DIRECTORY)
-learning_rate = 0.01
+learning_rate = 0.0001
 momentum = 0.9
 weight_decay = 5e-4
-batch_size = 8
+batch_size = 16
 gamma = 0.1
 num_epochs = 30
+start_epoch = 2
 num_workers = 0
 debug_steps = 100
 
@@ -128,6 +129,7 @@ if __name__ == '__main__':
     min_loss = -10000.0
     last_epoch = -1
     #########################################
+    net.load('checkpoint/vgg-Epoch-1-Loss-8.623500074659075.pth')
     net.to(device)
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=device)
@@ -144,26 +146,26 @@ if __name__ == '__main__':
     val_losses = []
     val_reg_losses = []
     val_class_losses = []
-    for epoch in range(1, num_epochs+1):
+    for epoch in range(start_epoch, num_epochs+1):
         scheduler.step()
         epoch_trainloss = train(train_loader, net, criterion, optimizer,
                                 device=device, debug_steps=debug_steps, epoch=epoch)
         train_losses.append(epoch_trainloss)
         train_end = time.time() - start_time
-        train_sec = train_end//60
-        train_min = train_end%60
-        train_hour = train_min%60
-        train_min = train_min//60
+        train_sec = train_end%60
+        train_min = train_end//60
+        train_hour = train_min//60
+        train_min = train_min%60
         print(f'{train_hour}h {train_min}min {train_sec}s Epoch {epoch}, Train Loss: {epoch_trainloss:.4f}')
         val_loss, val_regression_loss, val_classification_loss = val(val_loader, net, criterion, device)
         val_losses.append(val_loss)
         val_reg_losses.append(val_regression_loss)
         val_class_losses.append(val_classification_loss)
         val_end = time.time() - start_time
-        val_sec = val_end//60
-        val_min = val_end%60
-        val_hour = val_min%60
-        val_min = val_min//60
+        val_sec = val_end%60
+        val_min = val_end//60
+        val_hour = val_min//60
+        val_min = val_min%60
         print(f"{val_hour}h {val_min}min {val_sec}s Epoch: {epoch}, " +
                 f"Validation Loss: {val_loss:.4f}, " +
                 f"Validation Regression Loss {val_regression_loss:.4f}, " +
@@ -173,7 +175,7 @@ if __name__ == '__main__':
         net.save(model_path)
         print(f"Saved model {model_path}")
         with open(CHECKPOINT_DIRECTORY+'/epoch{}.txt'.format(epoch), "w") as f:
-            f.write('trainloss='+",".join(train_losses))
-            f.write('valloss='+",".join(val_losses))
-            f.write('valregloss='+",".join(val_reg_losses))
-            f.write('valclassloss='+",".join(val_class_losses))
+            f.write('trainloss='+",".join([str(a) for a in train_losses]))
+            f.write('valloss='+",".join([str(a) for a in val_losses]))
+            f.write('valregloss='+",".join([str(a) for a in val_reg_losses]))
+            f.write('valclassloss='+",".join([str(a) for a in val_class_losses]))

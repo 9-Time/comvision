@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 import numpy as np
 from skimage import io, transform
+import cv2
 
 class OpenImageData(Dataset):
     def __init__(self, filepath, train_val_test= 'train', transform=None, target_transform=None):
@@ -41,7 +42,6 @@ class OpenImageData(Dataset):
                     self.class_stat[class_name] += 1
         content = ["Dataset Summary:"
                    f"Number of Images: {len(self.data)}",
-                   f"Minimum Number of Images for a Class: {self.min_image_num}",
                    "Label Distribution:"]
         for class_name, num in self.class_stat.items():
             content.append(f"\t{class_name}: {num}")
@@ -50,9 +50,11 @@ class OpenImageData(Dataset):
     def __getitem__(self, idx):
         image_info = self.data[idx]
         image_file = '{}/{}/{}.jpg'.format(self.filepath, self.train_val_test, image_info['image_id'])
-        img = io.imread(image_file)
-        if len(img.shape) == 2:
-            img = np.stack((img,)*3, axis=-1)
+        img = cv2.imread(image_file)
+        if img.shape[2] == 1:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         boxes = image_info['boxes']
         boxes[:, 0] *= img.shape[1]
         boxes[:, 1] *= img.shape[0]
