@@ -6,6 +6,7 @@ import os
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 import time
+import itertools
 
 from pkg.vgg_ssd import create_vgg_ssd
 from pkg.config import vgg_ssd_config
@@ -58,7 +59,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         running_regression_loss += regression_loss.item()
         running_classification_loss += classification_loss.item()
         epoch_loss += running_loss
-        if i and i % debug_steps == 0:
+        if  i % debug_steps == 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
             avg_clf_loss = running_classification_loss / debug_steps
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     config = vgg_ssd_config
     #########################################
 
-    train_transform = TrainAugmentation(config.image_size)
+    train_transform = TrainAugmentation(config.image_size, config.image_mean)
     target_transform = MatchPrior(config.priors, config.center_variance,
                                   config.size_variance, 0.5)
     test_transform = TestTransform(config.image_size)
@@ -128,13 +129,25 @@ if __name__ == '__main__':
     net = create_net(num_classes)
     min_loss = -10000.0
     last_epoch = -1
+    params =[
+        {'params': net.base_net.parameters(), 'lr':learning_rate},
+        {'params': itertools.chain(
+            net.source_layer_add_ons.parameters(),
+            net.extras.parameters()
+        ), 'lr':learning_rate},
+        {'params': itertools.chain(
+            net.regression_headers.parameters(),
+            net.classification_headers.parameters()
+        )
+        }
+    ]
     #########################################
-    net.load('checkpoint/vgg-Epoch-1-Loss-8.623500074659075.pth')
+    net.load('checkpoint/vgg-Epoch-1-Loss-9.776871408735003.pth')
     net.to(device)
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=device)
 
-    optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=momentum,
+    optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum,
                                 weight_decay=weight_decay)
 
     milestones = [80,100]
@@ -156,7 +169,7 @@ if __name__ == '__main__':
         train_min = train_end//60
         train_hour = train_min//60
         train_min = train_min%60
-        print(f'{train_hour}h {train_min}min {train_sec}s Epoch {epoch}, Train Loss: {epoch_trainloss:.4f}')
+        print(f'{train_hour}h {train_min}min {train_sec:.0f}s Epoch {epoch}, Train Loss: {epoch_trainloss:.4f}')
         val_loss, val_regression_loss, val_classification_loss = val(val_loader, net, criterion, device)
         val_losses.append(val_loss)
         val_reg_losses.append(val_regression_loss)

@@ -96,11 +96,11 @@ class ColorJitter(object):
         return self.cj(image), boxes, labels
 
 class Resize(object):
-    def __init__(self, size, interpolation=2):
-        self.rs = transforms.Resize((size,size), interpolation)
+    def __init__(self, size):
+        self.size = size
 
     def __call__(self, image, boxes=None, labels=None):
-        return self.rs(image), boxes, labels
+        return cv2.resize(image,(self.size, self.size)), boxes, labels
 
 class RandomMirror(object):
     def __call__(self, image, boxes, classes):
@@ -213,15 +213,42 @@ class RandomSampleCrop(object):
                 current_boxes[:, 2:] -= rect[:2]
 
                 return current_image, current_boxes, current_labels
+class Expand(object):
+    def __init__(self, mean):
+        self.mean = mean
+
+    def __call__(self, image, boxes, labels):
+        if random.randint(2):
+            return image, boxes, labels
+
+        height, width, depth = image.shape
+        ratio = random.uniform(1, 4)
+        left = random.uniform(0, width*ratio - width)
+        top = random.uniform(0, height*ratio - height)
+
+        expand_image = np.zeros(
+            (int(height*ratio), int(width*ratio), depth),
+            dtype=image.dtype)
+        expand_image[:, :, :] = self.mean
+        expand_image[int(top):int(top + height),
+                     int(left):int(left + width)] = image
+        image = expand_image
+
+        boxes = boxes.copy()
+        boxes[:, :2] += (int(left), int(top))
+        boxes[:, 2:] += (int(left), int(top))
+
+        return image, boxes, labels
 
 class TrainAugmentation(object):
-    def __init__(self, size):
+    def __init__(self, size, mean):
         self.augment = Compose([
+            Expand(mean),
             RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
-            ToPIL(),
             Resize(size),
+            ToPIL(),
             ColorJitter(2,2,2,0.5),
             ToTensor(),
             Normalize()
@@ -234,8 +261,8 @@ class TestTransform(object):
     def __init__(self, size):
         self.augment = Compose([
             ToPercentCoords(),
-            ToPIL(),
             Resize(size),
+            ToPIL(),
             ToTensor(),
             Normalize()
         ])
@@ -246,7 +273,6 @@ class TestTransform(object):
 class PredictionTransform(object):
     def __init__(self, size, mean=0.0, std=1.0):
         self.transform = Compose([
-            ToTensor(),
             Resize(size),
             ToTensor(),
             Normalize()
