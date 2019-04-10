@@ -24,7 +24,7 @@ balance_data = True
 freeze_base_net = False
 freeze_net = False
 mb2_width_mult = 1.0
-lr = 0.001
+lr = 0.0000001
 momentum = 0.9
 weight_decay = 5e-4
 gamma = 0.1
@@ -33,7 +33,7 @@ extra_layers_lr = None
 scheduler = 'multi-step'
 milestones = '80,100'
 t_max = 120
-batch_size = 32
+batch_size = 16
 num_epochs = 120
 num_workers = 0
 validation_epochs = 5
@@ -208,6 +208,7 @@ if __name__ == '__main__':
 
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=DEVICE)
+    torch.nn.utils.clip_grad_norm_(net.parameters(), 0.25)
     optimizer = torch.optim.SGD(params, lr=lr, momentum=momentum,
                                 weight_decay=weight_decay)
     logging.info(f"Learning rate: {lr}, Base net learning rate: {base_net_lr}, "

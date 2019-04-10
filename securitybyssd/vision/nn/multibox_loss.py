@@ -39,8 +39,10 @@ class MultiboxLoss(nn.Module):
 
         confidence = confidence[mask, :]
         classification_loss = F.cross_entropy(confidence.reshape(-1, num_classes), labels[mask], reduction='sum')
+        
         pos_mask = labels > 0
         predicted_locations = predicted_locations[pos_mask, :].reshape(-1, 4)
+        predicted_locations = predicted_locations.add(1e-5)
         gt_locations = gt_locations[pos_mask, :].reshape(-1, 4)
         smooth_l1_loss = F.smooth_l1_loss(predicted_locations, gt_locations, reduction='sum')
         num_pos = gt_locations.size(0)

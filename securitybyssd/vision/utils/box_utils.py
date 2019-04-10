@@ -195,12 +195,12 @@ def hard_negative_mining(loss, labels, neg_pos_ratio):
     """
     pos_mask = labels > 0
     num_pos = pos_mask.long().sum(dim=1, keepdim=True)
-    num_neg = num_pos * neg_pos_ratio
+    num_neg = torch.clamp(neg_pos_ratio*num_pos, max=pos_mask.size(1)-1)
 
-    loss[pos_mask] = -math.inf
+    loss[pos_mask] = 0
     _, indexes = loss.sort(dim=1, descending=True)
     _, orders = indexes.sort(dim=1)
-    neg_mask = orders < num_neg
+    neg_mask = orders < num_neg.expand_as(orders)
     return pos_mask | neg_mask
 
 

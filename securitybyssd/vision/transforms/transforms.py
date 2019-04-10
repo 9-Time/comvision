@@ -52,7 +52,6 @@ class Compose(object):
 
     def __call__(self, img, boxes=None, labels=None):
         for t in self.transforms:
-            print(type(t))
             img, boxes, labels = t(img, boxes, labels)
         return img, boxes, labels
 
