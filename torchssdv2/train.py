@@ -17,13 +17,13 @@ DATASET_DIRECTORY = 'data/open_images'
 CHECKPOINT_DIRECTORY = 'checkpoint'
 if not os.path.exists(CHECKPOINT_DIRECTORY):
     os.makedirs(CHECKPOINT_DIRECTORY)
-learning_rate = 0.0001
+learning_rate = 0.001
 momentum = 0.9
 weight_decay = 5e-4
 batch_size = 16
 gamma = 0.1
-num_epochs = 30
-start_epoch = 2
+num_epochs = 100
+start_epoch = 1
 num_workers = 0
 debug_steps = 100
 
@@ -59,7 +59,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
         running_regression_loss += regression_loss.item()
         running_classification_loss += classification_loss.item()
         epoch_loss += running_loss
-        if  i % debug_steps == 0:
+        if  i % debug_steps == 0 and i != 0:
             avg_loss = running_loss / debug_steps
             avg_reg_loss = running_regression_loss / debug_steps
             avg_clf_loss = running_classification_loss / debug_steps
@@ -117,16 +117,17 @@ if __name__ == '__main__':
     print("Stored labels into file")
     train_loader = DataLoader(train_dataset, batch_size,
                               num_workers=num_workers,
-                              shuffle=True)
+                              shuffle=False)
     print("# Train Data:{}".format(len(train_dataset)))
 
     print('Preparing Validation Dataset')
     val_dataset = OpenImageData(DATASET_DIRECTORY, train_val_test ='validation',
-            transform=train_transform, target_transform=target_transform)
+            transform=test_transform, target_transform=target_transform)
     val_loader = DataLoader(val_dataset, batch_size, num_workers=num_workers, shuffle=False)
     print("# Validation Data:{}".format(len(val_dataset)))
     ############# NEEDS EDITING #############
     net = create_net(num_classes)
+    net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
     min_loss = -10000.0
     last_epoch = -1
     params =[
@@ -142,15 +143,16 @@ if __name__ == '__main__':
         }
     ]
     #########################################
-    net.load('checkpoint/vgg-Epoch-1-Loss-9.776871408735003.pth')
+    #net.load('checkpoint/vgg-Epoch-1-Loss-9.776871408735003.pth')
     net.to(device)
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=device)
 
-    optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum,
-                                weight_decay=weight_decay)
+    optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum)
+    # Temporarily Disable weight decay to test
+                                # weight_decay=weight_decay)
 
-    milestones = [80,100]
+    milestones = [20,40,60,80,100]
     scheduler = MultiStepLR(optimizer, milestones=milestones,
                                                     gamma=0.1, last_epoch=last_epoch)
     print("Starting Training")
@@ -179,16 +181,16 @@ if __name__ == '__main__':
         val_min = val_end//60
         val_hour = val_min//60
         val_min = val_min%60
-        print(f"{val_hour}h {val_min}min {val_sec}s Epoch: {epoch}, " +
-                f"Validation Loss: {val_loss:.4f}, " +
-                f"Validation Regression Loss {val_regression_loss:.4f}, " +
-                f"Validation Classification Loss: {val_classification_loss:.4f}"
-                )
+        print(f"{val_hour}h {val_min}min {val_sec:.0f}s Epoch: {epoch}, " +
+               f"Validation Loss: {val_loss:.4f}, " +
+               f"Validation Regression Loss {val_regression_loss:.4f}, " +
+               f"Validation Classification Loss: {val_classification_loss:.4f}"
+               )
         model_path = os.path.join(CHECKPOINT_DIRECTORY, f"vgg-Epoch-{epoch}-Loss-{val_loss}.pth")
         net.save(model_path)
         print(f"Saved model {model_path}")
         with open(CHECKPOINT_DIRECTORY+'/epoch{}.txt'.format(epoch), "w") as f:
-            f.write('trainloss='+",".join([str(a) for a in train_losses]))
-            f.write('valloss='+",".join([str(a) for a in val_losses]))
-            f.write('valregloss='+",".join([str(a) for a in val_reg_losses]))
-            f.write('valclassloss='+",".join([str(a) for a in val_class_losses]))
+           f.write('trainloss='+",".join([str(a) for a in train_losses]))
+           f.write('valloss='+",".join([str(a) for a in val_losses]))
+           f.write('valregloss='+",".join([str(a) for a in val_reg_losses]))
+           f.write('valclassloss='+",".join([str(a) for a in val_class_losses]))
