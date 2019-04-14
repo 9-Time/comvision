@@ -6,7 +6,7 @@ from pkg.dataloader import openimagesloader
 from pkg import vgg, vgg_ssd, ssd
 
 use_cuda = torch.cuda.is_available()
-device = 'cuda' if use_cuda else 'cpu'
+device = torch.device('cuda' if use_cuda else 'cpu')
 DATASET_DIRECTORY = 'data/open_images'
 LABELS_DIRECTORY = 'checkpoint/open-images-model-labels.txt'
 EVAL_DIRECTORY = 'evalresults'

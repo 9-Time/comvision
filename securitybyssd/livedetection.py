@@ -2,6 +2,8 @@ from pkg import vgg_ssd
 import cv2
 
 MODEL = 'checkpoint/vgg-Epoch-10-Loss-3.0180892944335938.pth'
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda' if use_cuda else 'cpu')
 
 cap = cv2.VideoCapture(0)   # capture from camera 0 (change if you have multiple cams)
 cap.set(3, 1920)
@@ -12,7 +14,7 @@ num_classes = len(class_names)
 
 net = vgg_ssd.create_vgg_ssd(len(class_names), is_test=True)
 net.load(MODEL)
-predictor = vgg_ssd.create_vgg_ssd_predictor(net, candidate_size=200)
+predictor = vgg_ssd.create_vgg_ssd_predictor(net, candidate_size=200, device=device)
 
 while True:
     ret, orig_image = cap.read()
