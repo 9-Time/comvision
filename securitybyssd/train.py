@@ -25,7 +25,7 @@ gamma = 0.1
 num_epochs = 100
 start_epoch = 1
 num_workers = 0
-debug_steps = 100
+debug_steps = 10
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")

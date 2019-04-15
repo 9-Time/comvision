@@ -70,6 +70,7 @@ class OpenImageData(Dataset):
 
     def __getitem__(self, idx):
         _, img, boxes, labels = self.getitem(idx)
+        return img, boxes, labels
 
     def get_annotation(self, idx):
         image_id, image, boxes, labels = self.getitem(idx)
@@ -90,7 +91,7 @@ class OpenImageData(Dataset):
 
 
 ##### MODULE TESTING #####
-# oid = OpenImageData('../data/open_images')
+# oid = OpenImageData('../../data/open_images')
 # print(oid.__getitem__(1))
 
 ##### TRANSFORM TESTING #####

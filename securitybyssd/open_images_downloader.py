@@ -20,14 +20,18 @@ def download(bucket, root, retry, counter, lock, path):
     i = 0
     src = path
     dest = f"{root}/{path}"
+    
     while i < retry:
+        logging.warning(f"i: {i}")
         try:
+            logging.warning("inside try loop")
             if not os.path.exists(dest):
                 s3.download_file(bucket, src, dest)
             else:
                 logging.info(f"{dest} already exists.")
             with lock:
                 counter.value += 1
+                logging.warning(f"counter value{counter.value}")
                 if counter.value % 100 == 0:
                     logging.warning(f"Downloaded {counter.value} images.")
             return
