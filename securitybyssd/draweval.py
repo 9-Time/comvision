@@ -9,7 +9,6 @@ THRESHOLD = 0.5
 
 if not os.path.exists(OUTPUT_DIRECTORY):
     os.mkdir(OUTPUT_DIRECTORY)
-all_txt = os.listdir(EVAL_RESULTS)
 df = pd.read_csv(EVAL_RESULTS, delimiter=" ", names=["ImageID", "Prob", "x1", "y1", "x2", "y2"])
 df['x1'] = df['x1'].astype(int)
 df['y1'] = df['y1'].astype(int)

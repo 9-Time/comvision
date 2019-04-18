@@ -25,7 +25,7 @@ gamma = 0.1
 num_epochs = 100
 start_epoch = 1
 num_workers = 0
-debug_steps = 10
+debug_steps = 100
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     print("Stored labels into file")
     train_loader = DataLoader(train_dataset, batch_size,
                               num_workers=num_workers,
-                              shuffle=False)
+                              shuffle=True)
     print("# Train Data:{}".format(len(train_dataset)))
 
     print('Preparing Validation Dataset')
@@ -127,7 +127,8 @@ if __name__ == '__main__':
     print("# Validation Data:{}".format(len(val_dataset)))
     ############# NEEDS EDITING #############
     net = create_net(num_classes)
-    net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
+    net.init_from_pretrained_ssd('checkpoint/vgg-Epoch-5-Loss-4.2018201521464755.pth')
+    # net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
     min_loss = -10000.0
     last_epoch = -1
     params =[

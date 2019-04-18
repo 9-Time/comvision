@@ -243,9 +243,9 @@ class Expand(object):
 class TrainAugmentation(object):
     def __init__(self, size, mean):
         self.augment = Compose([
-            #Expand(mean),
-            #RandomSampleCrop(),
-            #RandomMirror(),
+            Expand(mean),
+            RandomSampleCrop(),
+            RandomMirror(),
             ToPercentCoords(),
             Resize(size),
             ToPIL(),
