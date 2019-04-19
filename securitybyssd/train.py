@@ -19,11 +19,11 @@ if not os.path.exists(CHECKPOINT_DIRECTORY):
     os.makedirs(CHECKPOINT_DIRECTORY)
 learning_rate = 0.001
 momentum = 0.9
-weight_decay = 5e-4
+weight_decay = 0
 batch_size = 16
 gamma = 0.1
 num_epochs = 100
-start_epoch = 1
+start_epoch = 16
 num_workers = 0
 debug_steps = 100
 
@@ -93,9 +93,9 @@ def val(loader, net, criterion, device):
             regression_loss, classification_loss = criterion(confidence, locations, labels, boxes)
             loss = regression_loss + classification_loss
 
-        running_loss += loss.item()
-        running_regression_loss += regression_loss.item()
-        running_classification_loss += classification_loss.item()
+            running_loss += loss.item()
+            running_regression_loss += regression_loss.item()
+            running_classification_loss += classification_loss.item()
     return running_loss / num, running_regression_loss / num, running_classification_loss / num
 
 if __name__ == '__main__':
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     print("# Validation Data:{}".format(len(val_dataset)))
     ############# NEEDS EDITING #############
     net = create_net(num_classes)
-    net.init_from_pretrained_ssd('checkpoint/vgg-Epoch-5-Loss-4.2018201521464755.pth')
+    net.init_from_pretrained_ssd('checkpoint/vgg-Epoch-15-Loss-3.916132961000715.pth')
     # net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
     min_loss = -10000.0
     last_epoch = -1
@@ -149,9 +149,7 @@ if __name__ == '__main__':
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=device)
 
-    optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum)
-    # Temporarily Disable weight decay to test
-                                # weight_decay=weight_decay)
+    optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
 
     milestones = [20,40,60,80,100]
     scheduler = MultiStepLR(optimizer, milestones=milestones,
