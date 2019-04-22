@@ -15,7 +15,7 @@ EVAL_DIRECTORY = 'evalresults'
 MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
 NMS = 'hard'
 IOU_THRESHOLD = 0.5
-USE_VOC_METRICS = True
+USE_VOC_METRICS = False
 
 def group_annotation_by_class(dataset):
     true_case_stat = {}

@@ -1,8 +1,10 @@
-from pkg import vgg_ssd
+from pkg.vggssd import *
+from pkg.predictor import *
 import cv2
 import torch
+from pkg.config import vgg_ssd_config as config
 
-MODEL = 'checkpoint/vgg-Epoch-10-Loss-3.0180892944335938.pth'
+MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda' if use_cuda else 'cpu')
 
@@ -13,9 +15,9 @@ cap.set(4, 1080)
 class_names = [name.strip() for name in open('checkpoint/open-images-model-labels.txt').readlines()]
 num_classes = len(class_names)
 
-net = vgg_ssd.create_vgg_ssd(len(class_names), is_test=True)
+net = VGGSSD(len(class_names), device, config=config, is_test=True)
 net.load(MODEL)
-predictor = vgg_ssd.create_vgg_ssd_predictor(net, candidate_size=200, device=device)
+predictor = Predictor(net, device, config.image_size, config.image_mean, nms_method='hard')
 
 while True:
     ret, orig_image = cap.read()
