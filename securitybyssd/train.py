@@ -23,7 +23,7 @@ weight_decay = 0
 batch_size = 16
 gamma = 0.1
 num_epochs = 100
-start_epoch = 16
+start_epoch = 1
 num_workers = 0
 debug_steps = 100
 
@@ -35,6 +35,7 @@ if use_cuda:
 
 def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
     net.train()
+    net.is_test = False
     running_loss = 0.0
     running_regression_loss = 0.0
     running_classification_loss = 0.0
@@ -76,6 +77,7 @@ def train(loader, net, criterion, optimizer, device, debug_steps=100, epoch=-1):
 
 def val(loader, net, criterion, device):
     net.eval()
+    net.is_test = True
     running_loss = 0.0
     running_regression_loss = 0.0
     running_classification_loss = 0.0
@@ -99,10 +101,7 @@ def val(loader, net, criterion, device):
     return running_loss / num, running_regression_loss / num, running_classification_loss / num
 
 if __name__ == '__main__':
-    ############# NEEDS EDITING #############
-    create_net = create_vgg_ssd
     config = vgg_ssd_config
-    #########################################
 
     train_transform = TrainAugmentation(config.image_size, config.image_mean)
     target_transform = MatchPrior(config.priors, config.center_variance,
@@ -125,10 +124,19 @@ if __name__ == '__main__':
             transform=test_transform, target_transform=target_transform)
     val_loader = DataLoader(val_dataset, batch_size, num_workers=num_workers, shuffle=False)
     print("# Validation Data:{}".format(len(val_dataset)))
-    ############# NEEDS EDITING #############
-    net = create_net(num_classes)
-    net.init_from_pretrained_ssd('checkpoint/vgg-Epoch-15-Loss-3.916132961000715.pth')
-    # net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
+
+    net = create_vgg_ssd(num_classes)
+    # net.init_from_base_net('checkpoint/vgg16_reducedfc.pth')
+    net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
+
+    # Freezing
+    # for param in net.base_net.parameters():
+    #     param.requires_grad = False
+    # for param in net.source_layer_add_ons.parameters():
+    #     param.requires_grad = False
+    # for param in net.extras.parameters():
+    #     param.requires_grad = False
+    
     min_loss = -10000.0
     last_epoch = -1
     params =[
@@ -143,8 +151,11 @@ if __name__ == '__main__':
         )
         }
     ]
-    #########################################
-    #net.load('checkpoint/vgg-Epoch-1-Loss-9.776871408735003.pth')
+
+    # Param if freeze
+    # params = itertools.chain(net.regression_headers.parameters(), net.classification_headers.parameters())
+
+
     net.to(device)
     criterion = MultiboxLoss(config.priors, iou_threshold=0.5, neg_pos_ratio=3,
                              center_variance=0.1, size_variance=0.2, device=device)
@@ -185,10 +196,10 @@ if __name__ == '__main__':
                f"Validation Regression Loss {val_regression_loss:.4f}, " +
                f"Validation Classification Loss: {val_classification_loss:.4f}"
                )
-        model_path = os.path.join(CHECKPOINT_DIRECTORY, f"vgg-Epoch-{epoch}-Loss-{val_loss}.pth")
+        model_path = os.path.join(CHECKPOINT_DIRECTORY, f"v2-Epoch-{epoch}-Loss-{val_loss}.pth")
         net.save(model_path)
         print(f"Saved model {model_path}")
-        with open(CHECKPOINT_DIRECTORY+'/epoch{}.txt'.format(epoch), "w") as f:
+        with open(CHECKPOINT_DIRECTORY+'/v2epoch{}.txt'.format(epoch), "w") as f:
            f.write('trainloss='+",".join([str(a) for a in train_losses]))
            f.write('valloss='+",".join([str(a) for a in val_losses]))
            f.write('valregloss='+",".join([str(a) for a in val_reg_losses]))

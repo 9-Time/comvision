@@ -64,6 +64,16 @@ class ToPercentCoords(object):
 
         return image, boxes, labels
 
+class ToAbsoluteCoords(object):
+    def __call__(self, image, boxes=None, labels=None):
+        height, width, channels = image.shape
+        boxes[:, 0] *= width
+        boxes[:, 2] *= width
+        boxes[:, 1] *= height
+        boxes[:, 3] *= height
+
+        return image, boxes, labels
+
 class ToPIL(object):
     def __init__(self):
         self.topil = transforms.ToPILImage()
@@ -235,17 +245,19 @@ class Expand(object):
         image = expand_image
 
         boxes = boxes.copy()
-        boxes[:, :2] += (int(left), int(top))
-        boxes[:, 2:] += (int(left), int(top))
+        boxes[:, 0] += int(left)
+        boxes[:, 1] += int(top)
+        boxes[:, 2] += int(left)
+        boxes[:, 3] += int(top)
 
         return image, boxes, labels
 
 class TrainAugmentation(object):
     def __init__(self, size, mean):
         self.augment = Compose([
-            Expand(mean),
-            RandomSampleCrop(),
-            RandomMirror(),
+            # Expand(mean),
+            # RandomSampleCrop(),
+            # RandomMirror(),
             ToPercentCoords(),
             Resize(size),
             ToPIL(),

@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-# borrowed from https://github.com/amdegroot/ssd.pytorch/blob/master/ssd.py
+# referenced https://github.com/amdegroot/ssd.pytorch/blob/master/ssd.py
 def vgg(cfg, batch_norm=False):
     layers = []
     in_channels = 3
