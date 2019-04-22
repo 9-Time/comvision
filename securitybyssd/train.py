@@ -8,10 +8,9 @@ from torch.optim.lr_scheduler import MultiStepLR
 import time
 import itertools
 
-from pkg.vgg_ssd import create_vgg_ssd
 from pkg.config import vgg_ssd_config
-from pkg.ssd import MatchPrior
 from pkg.multibox_loss import MultiboxLoss
+from pkg.vggssd import *
 
 DATASET_DIRECTORY = 'data/open_images'
 CHECKPOINT_DIRECTORY = 'checkpoint'
@@ -20,12 +19,12 @@ if not os.path.exists(CHECKPOINT_DIRECTORY):
 learning_rate = 0.001
 momentum = 0.9
 weight_decay = 0
-batch_size = 16
+batch_size = 4
 gamma = 0.1
 num_epochs = 100
 start_epoch = 1
 num_workers = 0
-debug_steps = 100
+debug_steps = 1
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -125,7 +124,8 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset, batch_size, num_workers=num_workers, shuffle=False)
     print("# Validation Data:{}".format(len(val_dataset)))
 
-    net = create_vgg_ssd(num_classes)
+    net = VGGSSD(num_classes, device, config=config)
+    # net = create_vgg_ssd(num_classes)
     # net.init_from_base_net('checkpoint/vgg16_reducedfc.pth')
     net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
 

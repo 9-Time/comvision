@@ -1,5 +1,6 @@
 from pkg import vgg_ssd
 import cv2
+import torch
 
 MODEL = 'checkpoint/vgg-Epoch-10-Loss-3.0180892944335938.pth'
 use_cuda = torch.cuda.is_available()

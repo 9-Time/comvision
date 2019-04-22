@@ -1,42 +1,83 @@
-import torch.nn as nn
 import torch
-import numpy as np
-from typing import List, Tuple
+import torch.nn as nn
 import torch.nn.functional as F
-
+from torch.nn import Conv2d, Sequential, ModuleList, LeakyReLU, BatchNorm2d, ReLU
+from .config import vgg_ssd_config as config
 from .utils import box_utils
+import numpy as np
+
 from collections import namedtuple
 GraphPath = namedtuple("GraphPath", ['s0', 'name', 's1'])  #
 
 
-class SSD(nn.Module):
-    def __init__(self, num_classes: int, base_net: nn.ModuleList, source_layer_indexes: List[int],
-                 extras: nn.ModuleList, classification_headers: nn.ModuleList,
-                 regression_headers: nn.ModuleList, is_test=False, config=None, device=None):
-        """Compose a SSD model using the given components.
-        """
-        super(SSD, self).__init__()
+class VGGSSD(nn.Module):
+    def __init__(self, num_classes, device, is_test=False, config=None):
+        super(VGGSSD, self).__init__()
+
+        vgg_config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+                  512, 512, 512]
 
         self.num_classes = num_classes
-        self.base_net = base_net
-        self.source_layer_indexes = source_layer_indexes
-        self.extras = extras
-        self.classification_headers = classification_headers
-        self.regression_headers = regression_headers
+        self.device = device
+        
+        self.base_net = ModuleList(self.vgg(vgg_config))
+
+        self.source_layer_indexes = [
+            (23, BatchNorm2d(512)),
+            len(self.base_net),
+        ]
+        self.extras = ModuleList([
+            Sequential(
+                Conv2d(in_channels=1024, out_channels=256, kernel_size=1),
+                LeakyReLU(),
+                Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1),
+                LeakyReLU()
+            ),
+            Sequential(
+                Conv2d(in_channels=512, out_channels=128, kernel_size=1),
+                LeakyReLU(),
+                Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
+                LeakyReLU()
+            ),
+            Sequential(
+                Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+                LeakyReLU(),
+                Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+                LeakyReLU()
+            ),
+            Sequential(
+                Conv2d(in_channels=256, out_channels=128, kernel_size=1),
+                LeakyReLU(),
+                Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+                LeakyReLU()
+            )
+        ])
+
+        self.classification_headers = ModuleList([
+            Conv2d(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
+            Conv2d(in_channels=1024, out_channels=6 * num_classes, kernel_size=3, padding=1),
+            Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=1, padding=0), # TODO: change to kernel_size=1, padding=0? from k3 p1
+        ])
+
+        self.regression_headers = ModuleList([
+            Conv2d(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
+            Conv2d(in_channels=1024, out_channels=6 * 4, kernel_size=3, padding=1),
+            Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
+            Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=1, padding=0), # TODO: change to kernel_size=1, padding=0? From k3 p1
+        ])
+
         self.is_test = is_test
         self.config = config
-
-        # register layers in source_layer_indexes by adding them to a module list
-        self.source_layer_add_ons = nn.ModuleList([t[1] for t in source_layer_indexes
+        self.source_layer_add_ons = nn.ModuleList([t[1] for t in self.source_layer_indexes
                                                    if isinstance(t, tuple) and not isinstance(t, GraphPath)])
-        if device:
-            self.device = device
-        else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.config = config
         self.priors = config.priors.to(self.device)
-            
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+
+    def forward(self, x):
         confidences = []
         locations = []
         start_layer_index = 0
@@ -95,7 +136,7 @@ class SSD(nn.Module):
             return confidences, boxes
         else:
             return confidences, locations
-
+    
     def compute_header(self, i, x):
         confidence = self.classification_headers[i](x)
         confidence = confidence.permute(0, 2, 3, 1).contiguous()
@@ -136,6 +177,28 @@ class SSD(nn.Module):
     def save(self, model_path):
         torch.save(self.state_dict(), model_path)
 
+    # referenced https://github.com/amdegroot/ssd.pytorch/blob/master/ssd.py
+    def vgg(self,cfg, batch_norm=False):
+        layers = []
+        in_channels = 3
+        for v in cfg:
+            if v == 'M':
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            elif v == 'C':
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
+            else:
+                conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True)]
+                in_channels = v
+        pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
+        conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
+        layers += [pool5, conv6,
+                nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
+        return layers
 
 class MatchPrior(object):
     def __init__(self, center_form_priors, center_variance, size_variance, iou_threshold):

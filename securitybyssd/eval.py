@@ -1,9 +1,11 @@
 import torch
 import os
 import numpy as np
-from pkg.utils import box_utils, measurements
+from pkg.utils import box_utils
 from pkg.dataloader import openimagesloader
-from pkg import vgg, vgg_ssd, ssd
+from pkg.predictor import *
+from pkg.vggssd import *
+from pkg.config import vgg_ssd_config as config
 
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda' if use_cuda else 'cpu')
@@ -13,7 +15,7 @@ EVAL_DIRECTORY = 'evalresults'
 MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
 NMS = 'hard'
 IOU_THRESHOLD = 0.5
-USE_2017_METRICS = True
+USE_VOC_METRICS = True
 
 def group_annotation_by_class(dataset):
     true_case_stat = {}
@@ -45,11 +47,41 @@ def group_annotation_by_class(dataset):
             all_gt_boxes[class_index][image_id] = torch.stack(all_gt_boxes[class_index][image_id])
     for class_index in all_difficult_cases:
         for image_id in all_difficult_cases[class_index]:
-            all_gt_boxes[class_index][image_id] = torch.tensor(all_gt_boxes[class_index][image_id])
+            all_gt_boxes[class_index][image_id] = all_gt_boxes[class_index][image_id].clone().detach() 
     return true_case_stat, all_gt_boxes, all_difficult_cases
 
+def compute_average_precision(precision, recall):
+    """
+    It computes average precision based on the definition of Pascal Competition. It computes the under curve area
+    of precision and recall. Recall follows the normal definition. Precision is a variant.
+    pascal_precision[i] = typical_precision[i:].max()
+    """
+    # identical but faster version of new_precision[i] = old_precision[i:].max()
+    precision = np.concatenate([[0.0], precision, [0.0]])
+    for i in range(len(precision) - 1, 0, -1):
+        precision[i - 1] = np.maximum(precision[i - 1], precision[i])
+
+    # find the index where the value changes
+    recall = np.concatenate([[0.0], recall, [1.0]])
+    changing_points = np.where(recall[1:] != recall[:-1])[0]
+
+    # compute under curve area
+    areas = (recall[changing_points + 1] - recall[changing_points]) * precision[changing_points + 1]
+    return areas.sum()
+
+
+def compute_voc2007_average_precision(precision, recall):
+    ap = 0.
+    for t in np.arange(0., 1.1, 0.1):
+        if np.sum(recall >= t) == 0:
+            p = 0
+        else:
+            p = np.max(precision[recall >= t])
+        ap = ap + p / 11.
+    return ap
+
 def compute_average_precision_per_class(num_true_cases, gt_boxes, difficult_cases,
-                                        prediction_file, iou_threshold, use_2007_metric):
+                                        prediction_file, iou_threshold, use_voc_metric):
     with open(prediction_file) as f:
         image_ids = []
         boxes = []
@@ -92,10 +124,10 @@ def compute_average_precision_per_class(num_true_cases, gt_boxes, difficult_case
     false_positive = false_positive.cumsum()
     precision = true_positive / (true_positive + false_positive)
     recall = true_positive / num_true_cases
-    if use_2007_metric:
-        return measurements.compute_voc2007_average_precision(precision, recall)
+    if use_voc_metric:
+        return compute_voc2007_average_precision(precision, recall)
     else:
-        return measurements.compute_average_precision(precision, recall)
+        return compute_average_precision(precision, recall)
 
 if __name__ == '__main__':
     class_names = [name.strip() for name in open(LABELS_DIRECTORY).readlines()]
@@ -103,12 +135,12 @@ if __name__ == '__main__':
     dataset = openimagesloader.OpenImageData(DATASET_DIRECTORY, train_val_test="test")
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
-    net = vgg_ssd.create_vgg_ssd(len(class_names), is_test=True)
+    net = VGGSSD(len(class_names), device, config=config, is_test=True)
 
     net.load(MODEL)
     net = net.to(device)
     print('Model Loaded')
-    predictor = vgg_ssd.create_vgg_ssd_predictor(net, nms_method=NMS, device=device)
+    predictor = Predictor(net, device, config.image_size, config.image_mean, nms_method=NMS)
 
     results = []
     for i in range(len(dataset)):
@@ -149,7 +181,7 @@ if __name__ == '__main__':
             all_difficult_cases[class_index],
             prediction_path,
             IOU_THRESHOLD,
-            USE_2017_METRICS
+            USE_VOC_METRICS
         )
         aps.append(ap)
         print(f"{class_name}: {ap}")
