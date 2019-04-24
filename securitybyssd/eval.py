@@ -12,10 +12,10 @@ device = torch.device('cuda' if use_cuda else 'cpu')
 DATASET_DIRECTORY = 'data/open_images'
 LABELS_DIRECTORY = 'checkpoint/open-images-model-labels.txt'
 EVAL_DIRECTORY = 'evalresults'
-MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
+MODEL = 'checkpoint/v3-Epoch-43-Loss-7.791508725711277.pth'
 NMS = 'hard'
 IOU_THRESHOLD = 0.5
-USE_VOC_METRICS = False
+USE_VOC_METRICS = True
 
 def group_annotation_by_class(dataset):
     true_case_stat = {}
@@ -156,6 +156,16 @@ if __name__ == '__main__':
             probs.reshape(-1, 1),
             boxes + 1.0  # matlab's indexes start from 1
         ], dim=1))
+    removal = []
+    for i in range(len(results)):
+        if results[i].shape[0] == 1:
+            removal.append(i)
+        elif results[i].shape[1] == 3:
+            removal.append(i)
+    counter = 0
+    for element in removal:
+        del results[element-counter]
+        counter += 1
     results = torch.cat(results)
     for class_index, class_name in enumerate(class_names):
         if class_index == 0: continue  # ignore background

@@ -5,6 +5,8 @@ import numpy as np
 import types
 from numpy import random
 
+import matplotlib.pyplot as plt
+
 def intersect(box_a, box_b):
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
     min_xy = np.maximum(box_a[:, :2], box_b[:2])
@@ -252,9 +254,41 @@ class Expand(object):
 
         return image, boxes, labels
 
+class ExpandImage(object):
+    def __init__(self, size):
+        self.size = size
+    def __call__(self, image, boxes, labels):
+        if random.randint(2):
+            return image, boxes, labels
+        height, width, depth = image.shape
+        # print(image.shape)
+        max_left = min(width-self.size, min(boxes[:,0]))
+        max_bottom = min(height-self.size, min(boxes[:,2]))
+        # print('min box size {}'.format(min_box_size))
+        left = int(random.uniform(0, max_left))
+        bottom = int(random.uniform(0, max_bottom))
+        # print(left, bottom)
+        # print(boxes)
+        expand_image = image[int(bottom):int(height), int(left):int(width)]
+        boxes = boxes.copy()
+        boxes[:,0] -= left
+        boxes[:,1] -= bottom
+        boxes[:,2] -= left
+        boxes[:,3] -= bottom
+        image = expand_image
+        # print(out_boxes)
+        # For Debug
+        # for box in boxes:
+        #     cv2.rectangle(expand_image, (box[0], box[1]), (box[2], box[3]), (255, 255, 0), 4)
+        # plt.imshow(expand_image)
+        # plt.show()
+        # print(image.shape)
+        return image, boxes, labels
+
 class TrainAugmentation(object):
     def __init__(self, size, mean):
         self.augment = Compose([
+            # ExpandImage(size),
             # Expand(mean),
             # RandomSampleCrop(),
             # RandomMirror(),

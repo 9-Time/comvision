@@ -29,27 +29,27 @@ class VGGSSD(nn.Module):
         self.extras = ModuleList([
             Sequential(
                 Conv2d(in_channels=1024, out_channels=256, kernel_size=1),
-                LeakyReLU(),
+                ReLU(),
                 Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1),
-                LeakyReLU()
+                ReLU()
             ),
             Sequential(
                 Conv2d(in_channels=512, out_channels=128, kernel_size=1),
-                LeakyReLU(),
+                ReLU(),
                 Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=2, padding=1),
-                LeakyReLU()
+                ReLU()
             ),
             Sequential(
                 Conv2d(in_channels=256, out_channels=128, kernel_size=1),
-                LeakyReLU(),
+                ReLU(),
                 Conv2d(in_channels=128, out_channels=256, kernel_size=3),
-                LeakyReLU()
+                ReLU()
             ),
             Sequential(
                 Conv2d(in_channels=256, out_channels=128, kernel_size=1),
-                LeakyReLU(),
+                ReLU(),
                 Conv2d(in_channels=128, out_channels=256, kernel_size=3),
-                LeakyReLU()
+                ReLU()
             )
         ])
 
@@ -59,7 +59,7 @@ class VGGSSD(nn.Module):
             Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
             Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
             Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
-            Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=1, padding=0), # TODO: change to kernel_size=1, padding=0? from k3 p1
+            Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=1, padding=0), 
         ])
 
         self.regression_headers = ModuleList([
@@ -68,7 +68,7 @@ class VGGSSD(nn.Module):
             Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
             Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
             Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
-            Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=1, padding=0), # TODO: change to kernel_size=1, padding=0? From k3 p1
+            Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=1, padding=0), 
         ])
 
         self.is_test = is_test

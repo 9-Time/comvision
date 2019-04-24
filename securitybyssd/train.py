@@ -24,7 +24,7 @@ gamma = 0.1
 num_epochs = 100
 start_epoch = 1
 num_workers = 0
-debug_steps = 1
+debug_steps = 100
 
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     print("# Validation Data:{}".format(len(val_dataset)))
 
     net = VGGSSD(num_classes, device, config=config)
-    # net = create_vgg_ssd(num_classes)
+
     # net.init_from_base_net('checkpoint/vgg16_reducedfc.pth')
     net.init_from_pretrained_ssd('checkpoint/pretrained.pth')
 
@@ -196,11 +196,19 @@ if __name__ == '__main__':
                f"Validation Regression Loss {val_regression_loss:.4f}, " +
                f"Validation Classification Loss: {val_classification_loss:.4f}"
                )
-        model_path = os.path.join(CHECKPOINT_DIRECTORY, f"v2-Epoch-{epoch}-Loss-{val_loss}.pth")
+        model_path = os.path.join(CHECKPOINT_DIRECTORY, f"v4-Epoch-{epoch}-Loss-{val_loss}.pth")
         net.save(model_path)
         print(f"Saved model {model_path}")
-        with open(CHECKPOINT_DIRECTORY+'/v2epoch{}.txt'.format(epoch), "w") as f:
+        with open(CHECKPOINT_DIRECTORY+'/v4epoch{}.txt'.format(epoch), "w") as f:
            f.write('trainloss='+",".join([str(a) for a in train_losses]))
            f.write('valloss='+",".join([str(a) for a in val_losses]))
            f.write('valregloss='+",".join([str(a) for a in val_reg_losses]))
            f.write('valclassloss='+",".join([str(a) for a in val_class_losses]))
+
+        if epoch % 30 == 0:
+            batch_size *= 2
+            print('Changing Batch Size {} -> {}'.format(batch_size/2, batch_size))
+            train_loader = DataLoader(train_dataset, batch_size,
+                              num_workers=num_workers,
+                              shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size, num_workers=num_workers, shuffle=False)
