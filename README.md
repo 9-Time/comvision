@@ -67,6 +67,8 @@ $ pip install numpy
 
 To download our model, head over to
 https://www.dropbox.com/s/lv5ye9u0k7zpjvy/vgg-Epoch-10-Loss-3.0180892944335938.pth?dl=0
+To download our version 2 model (using kernel size 1 and 0 padding on last layer), head over to 
+https://www.dropbox.com/s/9j7mf9tvi01i10j/v2-Epoch-39-Loss-7.86013218334743.pth?dl=0
 
 To run the livefeed with detection
 ```
