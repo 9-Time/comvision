@@ -3,16 +3,20 @@ import os
 import numpy as np
 from pkg.utils import box_utils
 from pkg.dataloader import openimagesloader
+from pkg.dataloader.transformations import *
 from pkg.predictor import *
 from pkg.vggssd import *
 from pkg.config import vgg_ssd_config as config
+import matplotlib.pyplot as plt
 
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda' if use_cuda else 'cpu')
 DATASET_DIRECTORY = 'data/open_images'
 LABELS_DIRECTORY = 'checkpoint/open-images-model-labels.txt'
-EVAL_DIRECTORY = 'evalresults'
-MODEL = 'checkpoint/v3-Epoch-43-Loss-7.791508725711277.pth'
+EVAL_DIRECTORY = 'darklighting'
+if not os.path.exists(EVAL_DIRECTORY):
+    os.makedirs(EVAL_DIRECTORY)
+MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
 NMS = 'hard'
 IOU_THRESHOLD = 0.5
 USE_VOC_METRICS = True
@@ -131,8 +135,7 @@ def compute_average_precision_per_class(num_true_cases, gt_boxes, difficult_case
 
 if __name__ == '__main__':
     class_names = [name.strip() for name in open(LABELS_DIRECTORY).readlines()]
-
-    dataset = openimagesloader.OpenImageData(DATASET_DIRECTORY, train_val_test="test")
+    dataset = openimagesloader.OpenImageData(DATASET_DIRECTORY, train_val_test="test", )
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
     net = VGGSSD(len(class_names), device, config=config, is_test=True)
@@ -156,16 +159,16 @@ if __name__ == '__main__':
             probs.reshape(-1, 1),
             boxes + 1.0  # matlab's indexes start from 1
         ], dim=1))
-    removal = []
-    for i in range(len(results)):
-        if results[i].shape[0] == 1:
-            removal.append(i)
-        elif results[i].shape[1] == 3:
-            removal.append(i)
-    counter = 0
-    for element in removal:
-        del results[element-counter]
-        counter += 1
+    # removal = []
+    # for i in range(len(results)):
+    #     if results[i].shape[0] == 1:
+    #         removal.append(i)
+    #     elif results[i].shape[1] == 3:
+    #         removal.append(i)
+    # counter = 0
+    # for element in removal:
+    #     del results[element-counter]
+    #     counter += 1
     results = torch.cat(results)
     for class_index, class_name in enumerate(class_names):
         if class_index == 0: continue  # ignore background

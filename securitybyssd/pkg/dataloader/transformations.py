@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import types
 from numpy import random
+import matplotlib.pyplot as plt
 
 import matplotlib.pyplot as plt
 
@@ -50,6 +51,9 @@ class Compose(object):
     def __call__(self, img, boxes=None, labels=None):
         for t in self.transforms:
             img, boxes, labels = t(img, boxes, labels)
+            # if isinstance(t, ColorJitter) :
+            #     plt.imshow(img)
+            #     plt.show()
         return img, boxes, labels
 
 class ConvertFromInts(object):
@@ -320,6 +324,9 @@ class PredictionTransform(object):
     def __init__(self, size, mean=0.0, std=1.0):
         self.transform = Compose([
             Resize(size),
+            # If Simulating Light and Dark
+            # ToPIL(),
+            # ColorJitter(1,0,0,0),
             ToTensor(),
             Normalize()
         ])

@@ -8,7 +8,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 import time
 import itertools
 
-from pkg.config import vgg_ssd_config
+from pkg.config import vgg_ssd_config as config
 from pkg.multibox_loss import MultiboxLoss
 from pkg.vggssd import *
 
@@ -100,7 +100,6 @@ def val(loader, net, criterion, device):
     return running_loss / num, running_regression_loss / num, running_classification_loss / num
 
 if __name__ == '__main__':
-    config = vgg_ssd_config
 
     train_transform = TrainAugmentation(config.image_size, config.image_mean)
     target_transform = MatchPrior(config.priors, config.center_variance,
