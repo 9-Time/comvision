@@ -51,9 +51,6 @@ class Compose(object):
     def __call__(self, img, boxes=None, labels=None):
         for t in self.transforms:
             img, boxes, labels = t(img, boxes, labels)
-            # if isinstance(t, ColorJitter) :
-            #     plt.imshow(img)
-            #     plt.show()
         return img, boxes, labels
 
 class ConvertFromInts(object):
@@ -265,14 +262,10 @@ class ExpandImage(object):
         if random.randint(2):
             return image, boxes, labels
         height, width, depth = image.shape
-        # print(image.shape)
         max_left = min(width-self.size, min(boxes[:,0]))
         max_bottom = min(height-self.size, min(boxes[:,2]))
-        # print('min box size {}'.format(min_box_size))
         left = int(random.uniform(0, max_left))
         bottom = int(random.uniform(0, max_bottom))
-        # print(left, bottom)
-        # print(boxes)
         expand_image = image[int(bottom):int(height), int(left):int(width)]
         boxes = boxes.copy()
         boxes[:,0] -= left
@@ -280,22 +273,15 @@ class ExpandImage(object):
         boxes[:,2] -= left
         boxes[:,3] -= bottom
         image = expand_image
-        # print(out_boxes)
-        # For Debug
-        # for box in boxes:
-        #     cv2.rectangle(expand_image, (box[0], box[1]), (box[2], box[3]), (255, 255, 0), 4)
-        # plt.imshow(expand_image)
-        # plt.show()
-        # print(image.shape)
         return image, boxes, labels
 
 class TrainAugmentation(object):
     def __init__(self, size, mean):
         self.augment = Compose([
-            # ExpandImage(size),
-            # Expand(mean),
-            # RandomSampleCrop(),
-            # RandomMirror(),
+            # ExpandImage(size), #commented out due to exploding gradient. trying to debug under experimentation
+            # Expand(mean),      #commented out due to exploding gradient. trying to debug under experimentation
+            # RandomSampleCrop(),#commented out due to exploding gradient. trying to debug under experimentation
+            # RandomMirror(),    #commented out due to exploding gradient. trying to debug under experimentation
             ToPercentCoords(),
             Resize(size),
             ToPIL(),
@@ -324,7 +310,7 @@ class PredictionTransform(object):
     def __init__(self, size, mean=0.0, std=1.0):
         self.transform = Compose([
             Resize(size),
-            # If Simulating Light and Dark
+            # Simulating under dark conditions
             # ToPIL(),
             # ColorJitter(1,0,0,0),
             ToTensor(),

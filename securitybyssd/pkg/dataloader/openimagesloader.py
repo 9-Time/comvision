@@ -15,8 +15,6 @@ class OpenImageData(Dataset):
         self.target_transform = target_transform
 
         annotation_file = f"{self.filepath}/sub-{self.train_val_test}-annotations-bbox.csv"
-        # Tester
-        # annotation_file = f"{self.filepath}/{self.train_val_test}_test.csv"
         annotations = pd.read_csv(annotation_file)
         self.class_names = ['BACKGROUND'] + sorted(list(annotations['ClassName'].unique()))
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
@@ -92,16 +90,3 @@ class OpenImageData(Dataset):
         return img
 
 
-##### MODULE TESTING #####
-# from transformations import *
-# oid = OpenImageData('data/open_images', 'train', Expand(300))
-# print(oid.__getitem__(1)[1])
-
-##### TRANSFORM TESTING #####
-# from transformations import *
-# train_transform = TrainAugmentation(300)
-# test_transform = TestTransform(300)
-# train_oid = OpenImageData('../data/open_images', 'train', train_transform)
-# test_oid = OpenImageData('../data/open_images', 'train', test_transform)
-# print(train_oid.__getitem__(1))
-# print(test_oid.__getitem__(1))

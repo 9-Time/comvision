@@ -159,16 +159,7 @@ if __name__ == '__main__':
             probs.reshape(-1, 1),
             boxes + 1.0  # matlab's indexes start from 1
         ], dim=1))
-    # removal = []
-    # for i in range(len(results)):
-    #     if results[i].shape[0] == 1:
-    #         removal.append(i)
-    #     elif results[i].shape[1] == 3:
-    #         removal.append(i)
-    # counter = 0
-    # for element in removal:
-    #     del results[element-counter]
-    #     counter += 1
+
     results = torch.cat(results)
     for class_index, class_name in enumerate(class_names):
         if class_index == 0: continue  # ignore background

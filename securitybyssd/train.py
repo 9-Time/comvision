@@ -151,8 +151,7 @@ if __name__ == '__main__':
         }
     ]
 
-    # Param if freeze
-    # params = itertools.chain(net.regression_headers.parameters(), net.classification_headers.parameters())
+
 
 
     net.to(device)

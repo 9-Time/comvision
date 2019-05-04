@@ -8,7 +8,7 @@ MODEL = 'checkpoint/v2-Epoch-39-Loss-7.86013218334743.pth'
 use_cuda = torch.cuda.is_available()
 device = torch.device('cuda' if use_cuda else 'cpu')
 
-cap = cv2.VideoCapture(0)   # capture from camera 0 (change if you have multiple cams)
+cap = cv2.VideoCapture(0)  
 cap.set(3, 1920)
 cap.set(4, 1080)
 
