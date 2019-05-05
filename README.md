@@ -67,10 +67,56 @@ $ pip install numpy
 
 To download our model, head over to
 https://www.dropbox.com/s/lv5ye9u0k7zpjvy/vgg-Epoch-10-Loss-3.0180892944335938.pth?dl=0
+
 To download our version 2 model (using kernel size 1 and 0 padding on last layer), head over to 
 https://www.dropbox.com/s/9j7mf9tvi01i10j/v2-Epoch-39-Loss-7.86013218334743.pth?dl=0
 
-To run the livefeed with detection
+Version 2 works better from our testing
+
+### Differences Between Version 1 and Version 2 Model
+Version 1
+```
+self.classification_headers = ModuleList([
+    Conv2d(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=1024, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1), 
+])
+
+self.regression_headers = ModuleList([
+    Conv2d(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=1024, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1), 
+])
+```
+
+Version 2
+```
+self.classification_headers = ModuleList([
+    Conv2d(in_channels=512, out_channels=4 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=1024, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=512, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=6 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * num_classes, kernel_size=1, padding=0), 
+])
+
+self.regression_headers = ModuleList([
+    Conv2d(in_channels=512, out_channels=4 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=1024, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=512, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=6 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=3, padding=1),
+    Conv2d(in_channels=256, out_channels=4 * 4, kernel_size=1, padding=0), 
+])
+```
+
+### To run the livefeed with detection
 ```
 $ git clone https://github.com/scarmaten/comvision.git
 $ cd comvision/securitybyssd
